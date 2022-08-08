@@ -1,40 +1,39 @@
+import re
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from .models import Project, Tag
-from .forms import ProjectForm
+from .forms import ProjectForm, ReviewForm
 from django.contrib.auth.decorators import login_required
-from .utils import search_project
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from .utils import search_project, paginate_project
+from django.contrib import messages
 
 
 def projects(request):
     projects, search_query = search_project(request)
-
-    page = request.GET.get('page')
-    results = 3
-    paginator = Paginator(projects, results)
-
-    try:
-        projects = paginator.page(page)
-    except EmptyPage:                                       # age ye page bishtar az mojood dade shod boro page akhar
-        page = paginator.num_pages
-        projects = paginator.page(page)
-    except PageNotAnInteger:                                # defult page 1 bashe
-        page = 1
-        projects = paginator.page(page)
-
+    custom_range , projects= paginate_project(request, projects, 3)
     args = {
         "projects" : projects ,
         'search_query': search_query,
-        'paginator': paginator
+        'custom_range': custom_range
     }
     return render(request, 'projects.html', args)
 
 
 def single_project(request, argum):
-    
+    project = Project.objects.get(id = argum)
+    form = ReviewForm()
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        review = form.save(commit=False)
+        review.project =project
+        review.owner = request.user.profile
+        review.save()
+        project.get_vote_count
+        messages.success(request, 'Your Review was successfully submitted! ')
+        return redirect('single_project', argum = project.id)
+
     args = {
-        'project': Project.objects.get(id = argum)
+        'project': project,
+        'form': form
     }
     return render(request, 'single_project.html', args)
 

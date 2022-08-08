@@ -6,16 +6,18 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from .forms import CustomUserCreationForm, ProfileForm, SkillForm
 from django.contrib.auth.decorators import login_required
-from .utils import search_profiles
+from .utils import search_profiles, paginate_profiles
 
 
 
 
 def profiles(request):
     profiles, search_query = search_profiles(request)
+    custom_range , profiles = paginate_profiles(request, profiles, 3)
     args = {
         'profiles': profiles,
-        'search_query': search_query
+        'search_query': search_query,
+        'custom_range': custom_range
     }
     return render(request ,'users/profiles.html', args)
 
@@ -36,7 +38,7 @@ def loginuser(request):
 
 
     if request.method == 'POST':
-        username = request.POST['username']
+        username = request.POST['username'].lower()
         password = request.POST['password']
 
         try:
@@ -48,7 +50,7 @@ def loginuser(request):
 
         if user is not None:
             login(request, user)
-            return redirect('profiles')
+            return redirect(request.GET['next'] if "next" in request.GET else 'user_account')
         else:
             messages.error(request,"username or password is incorrect")
 

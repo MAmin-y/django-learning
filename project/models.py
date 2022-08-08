@@ -22,11 +22,33 @@ class Project(models.Model):
         return self.title
 
     class Meta:
-        ordering = ['-created']   # jadid tarin project ro aval neshooon bede . age manfi ro bardarim jadid tarin ro akhar neshoon mide
+        ordering = ['-vote_ratio', '-vote_total', 'title']
+        # aval bar hasb darsad bad bar hasb tedad ray bad horoof alefba 
+
+
+    @property
+    def reviewers(self):  #search  shavad . balad nistam
+        queryset = self.reviews_set.all().values_list('owner__id', flat=True)
+        return queryset
+
+
+    @property            # search shavad hatman 
+    def get_vote_count(self):
+        reviews = self.reviews_set.all()
+        upvote = reviews.filter(value = 'up')
+        total_votes = reviews.count()
+        ratio = (upvote.count() / total_votes) * 100
+        self.vote_total = total_votes
+        self.vote_ratio = ratio
+        self.save()
+
+
+
+
 
 class Reviews(models.Model):
     VOTE_TYPE = (('up', 'up vote'), ('down', 'down vote'))
-    # owner
+    owner = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
     project = models.ForeignKey(Project, on_delete = models.CASCADE)
     body = models.TextField(null=True, blank=True)
     value = models.CharField(max_length=200, choices = VOTE_TYPE)
@@ -36,6 +58,8 @@ class Reviews(models.Model):
     def __str__(self):
         return self.value
 
+    class Meta:
+        unique_together = [['owner', 'project']]
 
 class Tag(models.Model):
     name = models.CharField(max_length=200)

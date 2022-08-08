@@ -36,7 +36,7 @@ def loginuser(request):
     # if request.user.is_authenticated:
     #     return redirect('projects')
 
-
+    # t
     if request.method == 'POST':
         username = request.POST['username'].lower()
         password = request.POST['password']
